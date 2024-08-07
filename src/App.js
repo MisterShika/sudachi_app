@@ -5,7 +5,8 @@ import './App.css';
 function App() {
     const [users, setUsers] = useState([]);
     const [username, setUsername] = useState('');
-    const [usernameExists, setUsernameExists] = useState(null);
+    const [password, setPassword] = useState('');
+    const [loginStatus, setLoginStatus] = useState(null);
 
     useEffect(() => {
         axios.get('http://localhost:5000/api/users')
@@ -17,18 +18,21 @@ function App() {
             });
     }, []);
 
-    const handleInputChange = (event) => {
+    const handleUserChange = (event) => {
         setUsername(event.target.value);
+    };
+    const handlePasswordChange = (event) => {
+        setPassword(event.target.value);
     };
 
     const handleFormSubmit = (event) => {
         event.preventDefault();
-        axios.get('http://localhost:5000/api/check-username', { params: { username } })
+        axios.get('http://localhost:5000/api/check-username', { params: { username, password } })
             .then(response => {
-                setUsernameExists(response.data.exists);
+                setLoginStatus(response.data.exists ? 'Login successful!' : 'Invalid username or password.');
             })
             .catch(error => {
-                console.error('There was an error checking the username!', error);
+                console.error('There was an error checking the username and password!', error);
             });
     };
 
@@ -41,19 +45,25 @@ function App() {
                 ))}
             </ul>
 
-            <h2>Check if Username Exists</h2>
+            <h2>Login</h2>
             <form onSubmit={handleFormSubmit}>
                 <input
                     type="text"
                     value={username}
-                    onChange={handleInputChange}
+                    onChange={handleUserChange}
                     placeholder="Enter username"
                 />
-                <button type="submit">Check</button>
+                <input
+                    type="password"
+                    value={password}
+                    onChange={handlePasswordChange}
+                    placeholder="Enter password"
+                />
+                <button type="submit">Login</button>
             </form>
 
-            {usernameExists !== null && (
-                <p>{usernameExists ? 'Username exists!' : 'Username does not exist.'}</p>
+            {loginStatus && (
+                <p>{loginStatus}</p>
             )}
         </div>
     );

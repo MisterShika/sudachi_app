@@ -36,8 +36,8 @@ app.get('/api/users', (req, res) => {
 });
 
 app.get('/api/check-username', (req, res) => {
-    const { username } = req.query;
-    connection.query('SELECT * FROM users WHERE username = ?', [username], (err, results) => {
+    const { username, password } = req.query;
+    connection.query('SELECT * FROM users WHERE username = ? AND password = ?', [username, password], (err, results) => {
         if (err) {
             res.status(500).send(err);
         } else {
@@ -45,6 +45,7 @@ app.get('/api/check-username', (req, res) => {
         }
     });
 });
+
 
 // Start the server
 app.listen(port, () => {
