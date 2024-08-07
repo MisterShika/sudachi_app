@@ -35,6 +35,17 @@ app.get('/api/users', (req, res) => {
     });
 });
 
+app.get('/api/check-username', (req, res) => {
+    const { username } = req.query;
+    connection.query('SELECT * FROM users WHERE username = ?', [username], (err, results) => {
+        if (err) {
+            res.status(500).send(err);
+        } else {
+            res.json({ exists: results.length > 0 });
+        }
+    });
+});
+
 // Start the server
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
