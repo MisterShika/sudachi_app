@@ -1,18 +1,20 @@
 const express = require('express');
 const mysql = require('mysql2');
-const cors = require('cors'); // Import cors
+const cors = require('cors');
+const bcrypt = require('bcrypt'); // Import bcrypt
 
 const app = express();
-const port = 5000; // Port for your API server
+const port = 5000;
 
-app.use(cors()); // Use cors middleware
+app.use(cors());
+app.use(express.json()); // For parsing application/json
 
 // Create a MySQL connection
 const connection = mysql.createConnection({
     host: 'localhost',
     user: 'root',
     password: '', // Replace with your MySQL password
-    database: 'sudachi_app' // Replace with your database name
+    database: 'sudachi_app'
 });
 
 // Connect to the database
@@ -37,15 +39,25 @@ app.get('/api/users', (req, res) => {
 
 app.get('/api/check-username', (req, res) => {
     const { username, password } = req.query;
-    connection.query('SELECT * FROM users WHERE username = ? AND password = ?', [username, password], (err, results) => {
+    connection.query('SELECT * FROM users WHERE username = ?', [username], (err, results) => {
         if (err) {
             res.status(500).send(err);
         } else {
-            res.json({ exists: results.length > 0 });
+            if (results.length > 0) {
+                const user = results[0];
+                bcrypt.compare(password, user.password, (err, match) => {
+                    if (err) {
+                        res.status(500).send(err);
+                    } else {
+                        res.json({ exists: match });
+                    }
+                });
+            } else {
+                res.json({ exists: false });
+            }
         }
     });
 });
-
 
 // Start the server
 app.listen(port, () => {
