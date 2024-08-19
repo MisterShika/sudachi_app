@@ -59,6 +59,24 @@ app.get('/api/check-username', (req, res) => {
     });
 });
 
+// Define an endpoint to register a new user
+app.post('/api/register', (req, res) => {
+    const { username, password, email } = req.body;
+    const hashedPassword = bcrypt.hashSync(password, 10);
+    connection.query('INSERT INTO users SET ?', {
+      username,
+      password: hashedPassword,
+      email
+    }, (err, results) => {
+      if (err) {
+        res.status(500).send(err);
+      } else {
+        res.json({ message: 'User created successfully' });
+      }
+    });
+  });
+  
+
 // Start the server
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);

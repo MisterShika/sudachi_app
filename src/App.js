@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 import './App.css';
 
@@ -61,7 +62,9 @@ function App() {
                 />
                 <button type="submit">Login</button>
             </form>
-
+            <p>
+                Don't have an account? <Link to="/register">Register an account</Link>
+            </p>
             {loginStatus && (
                 <p>{loginStatus}</p>
             )}
