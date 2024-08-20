@@ -1,6 +1,7 @@
 const express = require('express');
 const mysql = require('mysql2');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt'); // Import bcrypt
 
 const app = express();
@@ -10,7 +11,7 @@ app.use(cors());
 app.use(express.json()); // For parsing application/json
 
 // Create a MySQL connection
-const connection = mysql.createConnection({
+const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
     password: '', // Replace with your MySQL password
@@ -18,7 +19,7 @@ const connection = mysql.createConnection({
 });
 
 // Connect to the database
-connection.connect((err) => {
+db.connect((err) => {
     if (err) {
         console.error('Error connecting to the database:', err);
         return;
@@ -26,55 +27,42 @@ connection.connect((err) => {
     console.log('Connected to the MySQL server.');
 });
 
-// Define an endpoint to fetch data
-app.get('/api/users', (req, res) => {
-    connection.query('SELECT * FROM users', (err, results) => {
-        if (err) {
-            res.status(500).send(err);
-        } else {
-            res.json(results);
-        }
-    });
-});
-
-app.get('/api/check-username', (req, res) => {
-    const { username, password } = req.query;
-    connection.query('SELECT * FROM users WHERE username = ?', [username], (err, results) => {
-        if (err) {
-            res.status(500).send(err);
-        } else {
-            if (results.length > 0) {
-                const user = results[0];
-                bcrypt.compare(password, user.password, (err, match) => {
-                    if (err) {
-                        res.status(500).send(err);
-                    } else {
-                        res.json({ exists: match });
-                    }
-                });
-            } else {
-                res.json({ exists: false });
-            }
-        }
-    });
-});
-
-// Define an endpoint to register a new user
-app.post('/api/register', (req, res) => {
-    const { username, password, email } = req.body;
-    const hashedPassword = bcrypt.hashSync(password, 10);
-    connection.query('INSERT INTO users SET ?', {
-      username,
-      password: hashedPassword,
-      email
-    }, (err, results) => {
-      if (err) {
-        res.status(500).send(err);
-      } else {
-        res.json({ message: 'User created successfully' });
-      }
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+  
+    db.query('SELECT * FROM users WHERE username = ?', [username], async (err, result) => {
+      if (err) return res.status(500).send('Server error');
+      if (result.length === 0) return res.status(401).send('User not found');
+  
+        const user = result[0];
+        const validPassword = await bcrypt.compare(password, user.password);
+  
+      if (!validPassword) return res.status(401).send('Invalid credentials');
+  
+        const token = jwt.sign({ userId: user.id }, 'your-secret-key', { expiresIn: '1h' });
+        res.json({ token });
     });
   });
+
+  // JWT authentication middleware
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (!token) return res.status(403).send('Token required');
+  
+    jwt.verify(token, 'your-secret-key', (err, user) => {
+      if (err) return res.status(403).send('Invalid token');
+      req.user = user;
+      next();
+    });
+  };
+  
+  // Protected route example
+  app.get('/protected', authenticateToken, (req, res) => {
+    res.send('This is a protected route');
+  });
+
+
   
 
 // Start the server
