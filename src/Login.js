@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 function Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
   
     const handleSubmit = async (e) => {
       e.preventDefault();
@@ -12,15 +13,10 @@ function Login() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
       });
-  
+
       const data = await response.json();
-      if (data.token) {
-        localStorage.setItem('token', data.token);
-        // Update UI or redirect to a protected route
-        console.log(data.token);
-      } else {
-        alert('Login failed');
-      }
+      setErrorMessage(data.message);
+
     };
 
   return (
@@ -37,6 +33,9 @@ function Login() {
         value={password} 
         onChange={(e) => setPassword(e.target.value)} 
       />
+      <div className="errorBox">
+        {errorMessage}
+      </div>
       <button type="submit">Login</button>
     </form>
   );

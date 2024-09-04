@@ -29,38 +29,41 @@ db.connect((err) => {
 
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
-  
     db.query('SELECT * FROM users WHERE username = ?', [username], async (err, result) => {
       if (err) return res.status(500).send('Server error');
-      if (result.length === 0) return res.status(401).send('User not found');
+      if (result.length === 0) {
+        return res.status(401).json({ message: 'Account doesn\'t exist or incorrect password. Please try again.' });
+      }
   
         const user = result[0];
         const validPassword = await bcrypt.compare(password, user.password);
   
-      if (!validPassword) return res.status(401).send('Invalid credentials');
-  
+        if (!validPassword) {
+          return res.status(401).json({ message: 'Account doesn\'t exist or incorrect password. Please try again.' });
+        }
+        
         const token = jwt.sign({ userId: user.id }, 'your-secret-key', { expiresIn: '1h' });
         res.json({ token });
     });
   });
 
-  // JWT authentication middleware
-const authenticateToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    if (!token) return res.status(403).send('Token required');
+//   // JWT authentication middleware
+// const authenticateToken = (req, res, next) => {
+//     const authHeader = req.headers['authorization'];
+//     const token = authHeader && authHeader.split(' ')[1];
+//     if (!token) return res.status(403).send('Token required');
   
-    jwt.verify(token, 'your-secret-key', (err, user) => {
-      if (err) return res.status(403).send('Invalid token');
-      req.user = user;
-      next();
-    });
-  };
+//     jwt.verify(token, 'your-secret-key', (err, user) => {
+//       if (err) return res.status(403).send('Invalid token');
+//       req.user = user;
+//       next();
+//     });
+//   };
   
-  // Protected route example
-  app.get('/protected', authenticateToken, (req, res) => {
-    res.send('This is a protected route');
-  });
+//   // Protected route example
+//   app.get('/protected', authenticateToken, (req, res) => {
+//     res.send('This is a protected route');
+//   });
 
 
   
